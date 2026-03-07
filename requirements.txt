@@ -1,0 +1,24 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
+torch-scatter==2.1.2
+
+numpy==1.26.4
+pillow==11.0.0
+tqdm==4.67.1
+plyfile==1.1
+einops==0.8.1
+wandb==0.19.9
+lpips==0.1.4
+colorama==0.4.6
+scipy==1.15.2
+scikit-image==0.25.2
+rich==13.9.4
+jaxtyping==0.2.38
+
+-e submodules/diff-gaussian-rasterization
+-e submodules/simple-knn
+-e submodules/gridencoder
+-e submodules/arithmetic
