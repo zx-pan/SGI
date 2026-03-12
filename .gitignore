@@ -1,2 +1,14 @@
-data/
 __pycache__/
+*.pyc
+*.pth
+*.ckpt
+*.pt
+*.log
+*.ply
+*.png
+*.jpg
+outputs/
+checkpoints/
+datasets/
+data/
+wandb/
