@@ -593,8 +593,6 @@ class GaussianModel(nn.Module):
             del init_points
             torch.cuda.empty_cache()
 
-        print(f'Initial voxel_size: {self.voxel_size}')
-
         points = self.voxelize_sample(points, voxel_size=self.voxel_size)
         fused_point_cloud = torch.tensor(np.asarray(points)).float().cuda()
         offsets = torch.zeros((fused_point_cloud.shape[0], self.n_offsets, dim)).float().cuda()
@@ -613,8 +611,6 @@ class GaussianModel(nn.Module):
         # print(dist2)
         scales = torch.log(torch.sqrt(dist2))[..., None].repeat(1, 4)
         scales = torch.clamp(scales, min=0.0001, max=0.5)   # added by zixuan
-        # print(scales)
-        # exit()
 
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         rots[:, 0] = 1
@@ -1521,21 +1517,6 @@ class GaussianModel(nn.Module):
             bit_feat = 0
 
             for cc in range(5):
-                # mean_adj, scale_adj, prob_adj = self.get_deform_mlp.forward(feat, mean_scale, to_dec=cc)
-                # probs = torch.stack([prob[:, cc*10:cc*10+10], prob_adj], dim=-1)
-                # probs = torch.softmax(probs, dim=-1)
-                #
-                # feat_tmp = feat[:, cc*10:cc*10+10].contiguous().view(-1)
-                # Q_feat_tmp = Q_feat[:, cc*10:cc*10+10].contiguous().view(-1)
-                #
-                # bit_feat += encoder_gaussian_mixed_chunk(
-                #     feat_tmp,
-                #     [mean[:, cc*10:cc*10+10].contiguous().view(-1), mean_adj.contiguous().view(-1)],
-                #     [scale[:, cc*10:cc*10+10].contiguous().view(-1), scale_adj.contiguous().view(-1)],
-                #     [probs[..., 0].contiguous().view(-1), probs[..., 1].contiguous().view(-1)],
-                #     Q_feat_tmp,
-                #     file_name=feat_b_name.replace('.b', f'_{cc}.b'), chunk_size=
-
                 # no deform
                 feat_tmp = feat[:, cc*split_size:cc*split_size+split_size].contiguous().view(-1)
                 Q_feat_tmp = Q_feat[:, cc*split_size:cc*split_size+split_size].contiguous().view(-1)

@@ -101,10 +101,6 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
             Q_scaling = 0.001 * 1000 * ((2**(pc.cur_scale)) / (2**(pc.multi_scale_level-1)))
             Q_offsets = 0.2 * ((2**(pc.cur_scale)) / (2**(pc.multi_scale_level-1)))
 
-            if step % 1000 == 0:
-                print(pc.cur_scale)
-                print("Q_feat_adj", Q_feat, Q_scaling, Q_offsets)
-
             Q_feat_adj = Q_feat_adj.contiguous().repeat(1, mean.shape[-1])
             Q_scaling_adj = Q_scaling_adj.contiguous().repeat(1, mean_scaling.shape[-1])
             Q_offsets_adj = Q_offsets_adj.contiguous().repeat(1, mean_offsets.shape[-1])
@@ -119,14 +115,6 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
             grid_offsets_chosen = grid_offsets_chosen.view(-1, 2 * pc.n_offsets)
 
             binary_grid_masks_chosen = binary_grid_masks_chosen.repeat(1, 1, 2).view(-1, 2*pc.n_offsets)
-
-            # check if mean has nan
-            if torch.isnan(mean).any() or torch.isnan(scale).any() or torch.isnan(prob).any() or step == 15000 or step == 30000:
-                print(feat_chosen.max(), feat_chosen.min(), feat_chosen.mean())
-                print(grid_scaling_chosen.max(), grid_scaling_chosen.min(), grid_scaling_chosen.mean())
-                print(grid_offsets_chosen.max(), grid_offsets_chosen.min(), grid_offsets_chosen.mean())
-                print(mean.max(), mean.min(), mean.mean())
-                print(scale.max(), scale.min(), scale.mean())
 
             bit_feat = pc.entropy_gaussian.forward(feat_chosen,mean,scale,Q=Q_feat, x_mean=pc._anchor_feat.mean())
 
@@ -198,16 +186,6 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
     rot = scale_rot[:, 2:]  # [N_opacity_pos_gaussian, 1]
 
     neural_opacity = scaling_repeat[:, 2:]
-
-    if step % 1000 == 0:
-        print(
-            f"scaling:        prod {scaling.prod(dim=1).mean():.6f}, max {scaling.max():.6f}, mean {scaling.mean():.6f}")
-        print(
-            f"scaling_repeat: prod {scaling_repeat[:, 2:].prod(dim=1).mean():.6f}, max {scaling_repeat[:, 2:].max():.6f}, mean {scaling_repeat[:, 2:].mean():.6f}")
-        print(
-            f"offset_repeat:  prod {scaling_repeat[:, :2].prod(dim=1).mean():.6f}, max {scaling_repeat[:, :2].max():.6f}, mean {scaling_repeat[:, :2].mean():.6f}")
-        print(
-            f"scale_rot(sig): prod {torch.sigmoid(scale_rot[:, :2]).prod(dim=1).mean():.6f}, max {torch.sigmoid(scale_rot[:, :2]).max():.6f}, mean {torch.sigmoid(scale_rot[:, :2]).mean():.6f}")
 
     offsets = offsets * scaling_repeat[:, :2] # [N_opacity_pos_gaussian, 2]
     xyz = repeat_anchor + offsets  # [N_opacity_pos_gaussian, 2]

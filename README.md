@@ -92,9 +92,10 @@ bash train.sh image_dir output_root
 Notes:
 
 - The pipeline runs **training, encoding, decoding, and evaluation**.
+- Outputs are organized as `<output_root>/<dataset_name>/<image_name>/...`.
 - Logs are written to `outputs.log` under each image's output directory.
 - Encoded bitstreams are saved to `<model_path>/bitstreams`.
-- Per-image metrics are saved to `<output_root>/metrics.json` and `<output_root>/metrics.csv`.
+- Per-image metrics are saved to `<output_root>/<dataset_name>/metrics.json` and `<output_root>/<dataset_name>/metrics.csv`.
 - For very large images, use `--disable_lpips` to skip LPIPS and avoid potential GPU OOM during evaluation.
 
 ## Acknowledgement

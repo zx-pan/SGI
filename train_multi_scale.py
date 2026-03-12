@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 import shutil
+import tempfile
 import time
 import uuid
 from argparse import ArgumentParser, Namespace
@@ -169,6 +170,7 @@ def training(args_param, dataset, opt, pipe, dataset_name, testing_iterations, s
     for scale in reversed(range(scales)):
         if scales == 1:
             print("fitting without multi-scale")
+        # hardcoded for now, feel free to change
         elif scales == 2:
             if scale == 1:
                 opt.iterations = 9000
@@ -936,14 +938,16 @@ if __name__ == "__main__":
     if not output_root:
         output_root = os.path.join("./outputs", "image_runs")
     output_root = os.path.abspath(output_root)
-    os.makedirs(output_root, exist_ok=True)
+    dataset_name = Path(os.path.normpath(image_dir)).name or "dataset"
+    dataset_output_root = os.path.join(output_root, dataset_name)
+    os.makedirs(dataset_output_root, exist_ok=True)
 
     if args.use_wandb:
         import wandb
         wandb.login()
         run = wandb.init(
             project=args.wandb_project,
-            name=Path(output_root).name,
+            name=Path(dataset_output_root).name,
             settings=wandb.Settings(start_method="fork"),
             config=vars(args),
         )
@@ -962,92 +966,91 @@ if __name__ == "__main__":
         image_name = Path(image_path).name
         image_stem = Path(image_path).stem
         per_image_args = copy.deepcopy(args)
-        per_image_args.model_path = os.path.join(output_root, image_stem)
-        dataset_root = os.path.join(output_root, "_datasets", image_stem)
-        os.makedirs(dataset_root, exist_ok=True)
-        create_single_image_dataset(image_path, dataset_root, per_image_args.fov_deg)
-        per_image_args.source_path = dataset_root
+        per_image_args.model_path = os.path.join(dataset_output_root, image_stem)
         os.makedirs(per_image_args.model_path, exist_ok=True)
 
         logger = get_logger(per_image_args.model_path)
         logger.info(f"args: {per_image_args}")
         logger.info(f"processing image: {image_name}")
+        with tempfile.TemporaryDirectory(prefix=f"sgi_{image_stem}_") as dataset_root:
+            create_single_image_dataset(image_path, dataset_root, per_image_args.fov_deg)
+            per_image_args.source_path = dataset_root
 
-        dataset = lp.extract(per_image_args)
-        pipe = pp.extract(per_image_args)
-        opt = op.extract(per_image_args)
+            dataset = lp.extract(per_image_args)
+            pipe = pp.extract(per_image_args)
+            opt = op.extract(per_image_args)
 
-        per_image_args.port = np.random.randint(10000, 20000)
-        
-        # test if the bitstream can successfully decode
-        if args.test_only:
-            bitstream_path = args.bitstream_path
-            if bitstream_path is None:
-                raise ValueError("--bitstream_path is required when --test_only is enabled")
-            dec_time_s, dec_log = test_bitstream_times(args, dataset, pipe, bitstream_path)
-            print(dec_time_s)
-            exit()
+            per_image_args.port = np.random.randint(10000, 20000)
 
-        # test the best chunk size to balance the decoding time and the size of the bitstream
-        if args.test_chunk_sizes:
-            bitstream_path = args.bitstream_path
-            if bitstream_path is None:
-                raise ValueError("--bitstream_path is required when --test_chunk_sizes is enabled")
-            output_dir = args.chunk_test_output or (bitstream_path.rstrip('/') + '_chunk_test')
-            print(f"\n{'#'*70}")
-            print(f"Testing chunk sizes: {args.chunk_sizes}")
-            print(f"Original bitstream: {bitstream_path}")
-            print(f"Output directory: {output_dir}")
-            print(f"{'#'*70}\n")
-            results = test_chunk_size_variations(
-                args, dataset, pipe, 
-                original_bitstream_path=bitstream_path,
-                test_chunk_sizes=args.chunk_sizes,
-                output_base_dir=output_dir,
+            # test if the bitstream can successfully decode
+            if args.test_only:
+                bitstream_path = args.bitstream_path
+                if bitstream_path is None:
+                    raise ValueError("--bitstream_path is required when --test_only is enabled")
+                dec_time_s, dec_log = test_bitstream_times(args, dataset, pipe, bitstream_path)
+                print(dec_time_s)
+                exit()
+
+            # test the best chunk size to balance the decoding time and the size of the bitstream
+            if args.test_chunk_sizes:
+                bitstream_path = args.bitstream_path
+                if bitstream_path is None:
+                    raise ValueError("--bitstream_path is required when --test_chunk_sizes is enabled")
+                output_dir = args.chunk_test_output or (bitstream_path.rstrip('/') + '_chunk_test')
+                print(f"\n{'#'*70}")
+                print(f"Testing chunk sizes: {args.chunk_sizes}")
+                print(f"Original bitstream: {bitstream_path}")
+                print(f"Output directory: {output_dir}")
+                print(f"{'#'*70}\n")
+                results = test_chunk_size_variations(
+                    args, dataset, pipe,
+                    original_bitstream_path=bitstream_path,
+                    test_chunk_sizes=args.chunk_sizes,
+                    output_base_dir=output_dir,
+                )
+                print("\nChunk size testing complete!")
+                exit()
+
+            scene, total_training_time = training(
+                per_image_args,
+                dataset,
+                opt,
+                pipe,
+                image_stem,
+                per_image_args.test_iterations,
+                per_image_args.save_iterations,
+                per_image_args.checkpoint_iterations,
+                per_image_args.start_checkpoint,
+                per_image_args.debug_from,
+                wandb=wandb,
+                logger=logger,
             )
-            print("\nChunk size testing complete!")
-            exit()
 
-        scene, total_training_time = training(
-            per_image_args,
-            dataset,
-            opt,
-            pipe,
-            image_stem,
-            per_image_args.test_iterations,
-            per_image_args.save_iterations,
-            per_image_args.checkpoint_iterations,
-            per_image_args.start_checkpoint,
-            per_image_args.debug_from,
-            wandb=wandb,
-            logger=logger,
-        )
+            psnr_val, ssim_val, enc_total_mb, dec_time_s, enc_log, dec_log, render_time_s, lpips_val = render_single_image_metrics(
+                scene, pipe, dataset.white_background, per_image_args.model_path
+            )
+            logger.info(enc_log)
+            logger.info(dec_log)
+            metrics_rows.append({
+                "image": image_name,
+                "psnr": psnr_val,
+                "ssim": ssim_val,
+                "lpips": lpips_val,
+                "encoding_total_mb": enc_total_mb,
+                "decoding_time_s": dec_time_s,
+                "rendering_time_s": render_time_s,
+                "model_path": per_image_args.model_path,
+                "total_training_time (minutes)": total_training_time / 60.0,
+            })
+            write_metrics(dataset_output_root, metrics_rows)
 
-        psnr_val, ssim_val, enc_total_mb, dec_time_s, enc_log, dec_log, render_time_s, lpips_val = render_single_image_metrics(
-            scene, pipe, dataset.white_background, per_image_args.model_path
-        )
-        logger.info(enc_log)
-        logger.info(dec_log)
-        metrics_rows.append({
-            "image": image_name,
-            "psnr": psnr_val,
-            "ssim": ssim_val,
-            "lpips": lpips_val,
-            "encoding_total_mb": enc_total_mb,
-            "decoding_time_s": dec_time_s,
-            "rendering_time_s": render_time_s,
-            "model_path": per_image_args.model_path,
-            "total_training_time (minutes)": total_training_time / 60.0,
-        })
-        write_metrics(output_root, metrics_rows)
-
-        torch.cuda.empty_cache()
+            torch.cuda.empty_cache()
 
     if wandb is not None:
         wandb.finish()
 
     # the average statistics of the metrics.json
-    with open(os.path.join(output_root, "metrics.json"), "r") as f:
+    with open(os.path.join(dataset_output_root, "metrics.json"), "r") as f:
         metrics_data = json.load(f)
     metrics = metrics_data.get("images", [])
     if len(metrics) == 0:
