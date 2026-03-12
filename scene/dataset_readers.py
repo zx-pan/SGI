@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from plyfile import PlyData, PlyElement
 from utils.sh_utils import SH2RGB
-from scene.gaussian_model import BasicPointCloud
+from scene.gaussian_model_decompose import BasicPointCloud
 
 dim = 2
 
