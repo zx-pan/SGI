@@ -1,6 +1,8 @@
-# [CVPR 2026] SGI
+# SGI
 
-Official Pytorch implementation of [**SGI: Structured 2D Gaussians for Efficient and Compact Large Image Representation**](https://arxiv.org/pdf/2603.07789).
+Official Pytorch implementation for the paper
+
+[**SGI: Structured 2D Gaussians for Efficient and Compact Large Image Representation**](https://arxiv.org/pdf/2603.07789), ***CVPR 2026 (Highlight)***.
 
 [Zixuan Pan*](https://scholar.google.com/citations?hl=en&user=3VuW2gcAAAAJ), [Kaiyuan Tang*](https://scholar.google.com/citations?user=M8M1ZwkAAAAJ&hl=en), [Jun Xia](https://junxia95.github.io), [Yifan Qin](https://yifanqin-nd.github.io), [Lin Gu](https://sites.google.com/view/linguedu/home), [Chaoli Wang](https://sites.nd.edu/chaoli-wang/), [Jianxu Chen](https://www.isas.de/en/the-institute/people/1569-jianxu-chen), [Yiyu Shi](https://scl-nd.github.io)
 
