@@ -18,11 +18,8 @@
 
 std::tuple<
     torch::Tensor, // output conics
-    torch::Tensor> // output extent
-compute_cov2d_bounds_tensor(
-    const int num_pts,
-    torch::Tensor &A,
-    const c10::optional<torch::Tensor> &opacities);
+    torch::Tensor> // output radii
+compute_cov2d_bounds_tensor(const int num_pts, torch::Tensor &A);
 
 std::tuple<
     torch::Tensor,
@@ -33,7 +30,6 @@ project_gaussians_forward_tensor(
     const int num_points,
     torch::Tensor &cov2d,
     torch::Tensor &means2d,
-    const c10::optional<torch::Tensor> &opacities,
     const unsigned img_height,
     const unsigned img_width,
     const unsigned block_width
@@ -44,43 +40,19 @@ std::tuple<
     torch::Tensor>
 project_gaussians_backward_tensor(
     const int num_points,
-    torch::Tensor &extent,
+    torch::Tensor &radii,
     torch::Tensor &conics,
     torch::Tensor &v_xy,
     torch::Tensor &v_conic
 );
 
-std::tuple<
-    torch::Tensor,
-    torch::Tensor,
-    torch::Tensor,
-    torch::Tensor>
-project_gaussians_forward_cholesky_tensor(
-    const int num_points,
-    torch::Tensor &cholesky,
-    torch::Tensor &means2d,
-    const c10::optional<torch::Tensor> &opacities,
-    const unsigned img_height,
-    const unsigned img_width,
-    const unsigned block_width
-);
-
-std::tuple<torch::Tensor, torch::Tensor>
-project_gaussians_backward_cholesky_tensor(
-    const int num_points,
-    torch::Tensor &extent,
-    torch::Tensor &cholesky,
-    torch::Tensor &conics,
-    torch::Tensor &v_xy,
-    torch::Tensor &v_conic
-);
 
 std::tuple<torch::Tensor, torch::Tensor> map_gaussian_to_intersects_tensor(
     const int num_points,
     const int num_intersects,
     const torch::Tensor &xys,
     const torch::Tensor &depths,
-    const torch::Tensor &extent,
+    const torch::Tensor &radii,
     const torch::Tensor &cum_tiles_hit,
     const std::tuple<int, int, int> tile_bounds,
     const unsigned block_width
@@ -93,12 +65,8 @@ torch::Tensor get_tile_bin_edges_tensor(
 );
 
 std::tuple<
-    torch::Tensor, // output img
-    torch::Tensor, // output wsum
-    torch::Tensor, // output dx
-    torch::Tensor, // output dy
-    torch::Tensor, // output dxy
-    torch::Tensor // output final_idx
+    torch::Tensor,
+    torch::Tensor
 > rasterize_forward_tensor(
     const std::tuple<int, int, int> tile_bounds,
     const std::tuple<int, int, int> block,
@@ -107,9 +75,7 @@ std::tuple<
     const torch::Tensor &tile_bins,
     const torch::Tensor &xys,
     const torch::Tensor &conics,
-    const torch::Tensor &colors,
-    const c10::optional<torch::Tensor> &opacities,
-    bool compute_upscale_gradients = true
+    const torch::Tensor &colors
 );
 
 std::
@@ -117,8 +83,7 @@ std::
         torch::Tensor, // dL_dxy
         torch::Tensor, // dL_dxy_abs
         torch::Tensor, // dL_dconic
-        torch::Tensor, // dL_dcolors
-        torch::Tensor  // dL_dopacities (optional, empty if opacities not provided)
+        torch::Tensor // dL_dcolors
         >
     rasterize_backward_tensor(
         const unsigned img_height,
@@ -130,31 +95,5 @@ std::
         const torch::Tensor &conics,
         const torch::Tensor &colors,
         const torch::Tensor &final_idx,
-        const torch::Tensor &v_output,
-        const torch::Tensor &v_render_wsum,
-        const c10::optional<torch::Tensor> &opacities,
-        const c10::optional<torch::Tensor> &v_output_dx,
-        const c10::optional<torch::Tensor> &v_output_dy,
-        const c10::optional<torch::Tensor> &v_output_dxy
+        const torch::Tensor &v_output
     );
-torch::Tensor gradient_aware_upscale_forward_tensor(
-    const torch::Tensor &render,    // [H, W, 3]
-    const torch::Tensor &dx,
-    const torch::Tensor &dy,
-    const torch::Tensor &dxy,
-    int dst_h,
-    int dst_w,
-    const std::tuple<float, float, float, float> &roi  // x1, y1, x2, y2
-);
-
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
-gradient_aware_upscale_backward_tensor(
-    const torch::Tensor &grad_output,  // [dst_h, dst_w, 3]
-    const torch::Tensor &render,       // [H, W, 3]
-    const torch::Tensor &dx,
-    const torch::Tensor &dy,
-    const torch::Tensor &dxy,
-    int dst_h,
-    int dst_w,
-    const std::tuple<float, float, float, float> &roi
-);

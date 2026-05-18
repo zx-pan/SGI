@@ -1,6 +1,6 @@
 """Python bindings for binning and sorting gaussians"""
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
 from jaxtyping import Float, Int
@@ -14,7 +14,7 @@ def map_gaussian_to_intersects(
     num_intersects: int,
     xys: Float[Tensor, "batch 2"],
     depths: Float[Tensor, "batch 1"],
-    extents: Float[Tensor, "batch 2"],
+    radii: Float[Tensor, "batch 1"],
     cum_tiles_hit: Float[Tensor, "batch 1"],
     tile_bounds: Tuple[int, int, int],
     block_size: int,
@@ -25,7 +25,7 @@ def map_gaussian_to_intersects(
         num_intersects,
         xys.contiguous(),
         depths.contiguous(),
-        extents.contiguous(),
+        radii.contiguous(),
         cum_tiles_hit.contiguous(),
         tile_bounds,
         block_size,
@@ -45,17 +45,15 @@ def get_tile_bin_edges(
 
 
 def compute_cov2d_bounds(
-    cov2d: Float[Tensor, "batch 3"],
-    opacities: Optional[Float[Tensor, "batch"]] = None,
-) -> Tuple[Float[Tensor, "batch 3"], Float[Tensor, "batch 2"]]:
+    cov2d: Float[Tensor, "batch 3"]
+) -> Tuple[Float[Tensor, "batch_conics 3"], Float[Tensor, "batch_radii 1"]]:
 
     assert (
         cov2d.shape[-1] == 3
     ), f"Expected input cov2d to be of shape (*batch, 3) (upper triangular values), but got {tuple(cov2d.shape)}"
     num_pts = cov2d.shape[0]
     assert num_pts > 0
-    return _C.compute_cov2d_bounds(num_pts, cov2d.contiguous(),
-        opacities.contiguous() if opacities is not None else None)
+    return _C.compute_cov2d_bounds(num_pts, cov2d.contiguous())
 
 
 def compute_cumulative_intersects(
@@ -72,7 +70,7 @@ def bin_and_sort_gaussians(
     num_intersects: int,
     xys: Float[Tensor, "batch 2"],
     depths: Float[Tensor, "batch 1"],
-    extents: Float[Tensor, "batch 2"],
+    radii: Float[Tensor, "batch 1"],
     cum_tiles_hit: Float[Tensor, "batch 1"],
     tile_bounds: Tuple[int, int, int],
     block_size: int,
@@ -89,7 +87,7 @@ def bin_and_sort_gaussians(
         num_intersects,
         xys,
         depths,
-        extents,
+        radii,
         cum_tiles_hit,
         tile_bounds,
         block_size,

@@ -1,7 +1,6 @@
 """Python bindings for 2D gaussian projection"""
 
-from typing import Optional, Tuple
-import torch
+from typing import Tuple
 
 from jaxtyping import Float
 from torch import Tensor
@@ -16,13 +15,11 @@ def project_gaussians(
     img_height: int,
     img_width: int,
     block_width: int,
-    opacities: Optional[Float[Tensor, "*batch"]] = None,
 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     assert block_width > 1 and block_width <= 16, "block_width must be between 2 and 16"
     return _ProjectGaussians.apply(
         cov2d.contiguous(),
         means2d.contiguous(),
-        opacities.contiguous() if opacities is not None else None,
         img_height,
         img_width,
         block_width,
@@ -36,7 +33,6 @@ class _ProjectGaussians(Function):
         ctx,
         cov2d: Float[Tensor, "*batch 3"],
         means2d: Float[Tensor, "*batch 2"],
-        opacities: Optional[Float[Tensor, "*batch"]],
         img_height: int,
         img_width: int,
         block_width: int,
@@ -47,14 +43,13 @@ class _ProjectGaussians(Function):
 
         (
             xys,
-            extents,
+            radii,
             conics,
             num_tiles_hit,
         ) = _C.project_gaussians_forward(
             num_points,
             cov2d,
             means2d,
-            opacities,
             img_height,
             img_width,
             block_width,
@@ -67,29 +62,29 @@ class _ProjectGaussians(Function):
 
         # Save tensors.
         ctx.save_for_backward(
-            extents,
+            radii,
             conics,
         )
 
-        return (xys, extents, conics, num_tiles_hit)
+        return (xys, radii, conics, num_tiles_hit)
 
     @staticmethod
     def backward(
         ctx,
         v_xys,
-        v_extents,
+        v_radii,
         v_conics,
         v_num_tiles_hit
     ):
         (   
-            extents,
+            radii,
             conics,
         ) = ctx.saved_tensors
 
 
         v_cov2d, v_mean2d = _C.project_gaussians_backward(
             ctx.num_points,
-            extents,
+            radii,
             conics,
             v_xys,
             v_conics,
@@ -97,7 +92,6 @@ class _ProjectGaussians(Function):
         return (
             v_cov2d,
             v_mean2d,
-            None,
             None,
             None,
             None,
