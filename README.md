@@ -48,7 +48,6 @@ conda activate SGI_env
 3. Install submodules
 
 ```
-
 pip install --no-build-isolation --no-use-pep517 ./submodules/diff-gaussian-rasterization
 pip install --no-build-isolation --no-use-pep517 ./submodules/simple-knn
 pip install --no-build-isolation --no-use-pep517 ./submodules/gridencoder
@@ -63,7 +62,8 @@ mkdir third_party
 cd third_party
 git clone https://github.com/g-truc/glm.git
 cd ../../../..
-pip install --no-build-isolation .
+python setup.py build
+python setup.py install
 ```
 
 5. Install `tmc3` (for GPCC)
