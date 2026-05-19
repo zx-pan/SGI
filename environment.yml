@@ -26,7 +26,3 @@ dependencies:
     - scikit-image==0.25.2
     - rich==13.9.4
     - jaxtyping==0.2.38
-    - -e submodules/diff-gaussian-rasterization
-    - -e submodules/simple-knn
-    - -e submodules/gridencoder
-    - -e submodules/arithmetic

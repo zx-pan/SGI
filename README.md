@@ -45,7 +45,17 @@ conda env create --file environment.yml
 conda activate SGI_env
 ```
 
-3. Install gsplat2d
+3. Install submodules
+
+```
+
+pip install --no-build-isolation --no-use-pep517 ./submodules/diff-gaussian-rasterization
+pip install --no-build-isolation --no-use-pep517 ./submodules/simple-knn
+pip install --no-build-isolation --no-use-pep517 ./submodules/gridencoder
+pip install --no-build-isolation --no-use-pep517 ./submodules/arithmetic
+```
+
+4. Install gsplat2d
 
 ```
 cd gsplat2d/gsplat2d/cuda/csrc
@@ -53,11 +63,10 @@ mkdir third_party
 cd third_party
 git clone https://github.com/g-truc/glm.git
 cd ../../../..
-python setup.py build
-python setup.py install
+pip install --no-build-isolation .
 ```
 
-4. Install `tmc3` (for GPCC)
+5. Install `tmc3` (for GPCC)
 
 - Please refer to [tmc3 github](https://github.com/MPEGGroup/mpeg-pcc-tmc13) for installation.
 - Don't forget to add `tmc3` to your environment variable.
