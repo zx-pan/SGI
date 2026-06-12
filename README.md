@@ -118,13 +118,12 @@ This codebase is built upon several excellent open-source projects, including [L
 If you use SGI algorithm in your research, please cite our paper:
 
 ```bibtex
-@misc{pan2026sgistructured2dgaussians,
-      title={SGI: Structured 2D Gaussians for Efficient and Compact Large Image Representation}, 
-      author={Zixuan Pan and Kaiyuan Tang and Jun Xia and Yifan Qin and Lin Gu and Chaoli Wang and Jianxu Chen and Yiyu Shi},
-      year={2026},
-      eprint={2603.07789},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2603.07789}, 
+@InProceedings{Pan_2026_CVPR,
+    author    = {Pan, Zixuan and Tang, Kaiyuan and Xia, Jun and Qin, Yifan and Gu, Lin and Wang, Chaoli and Chen, Jianxu and Shi, Yiyu},
+    title     = {SGI: Structured 2D Gaussians for Efficient and Compact Large Image Representation},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2026},
+    pages     = {12162-12172}
 }
 ```
